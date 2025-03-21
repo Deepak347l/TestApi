@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
   country: { type: String },
   address: { type: String },
   phone: { type: String },
-  username2: { type: String, unique: true, sparse: true }
+  username2: { type: String, unique: true, sparse: true },
+  profileImageUrl: { type: String, required: true }
 });
 
 // Hash password before saving
