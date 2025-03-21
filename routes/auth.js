@@ -77,7 +77,7 @@ router.post('/reset-password', async (req, res) => {
 
 router.post('/signup', async (req, res) => {
   try {
-    const { username, email, password, age, name, sex, dob, country, address, phone, username2 } = req.body;
+    const { username, email, password, age, name, sex, dob, country, address, phone, username2, profileImageUrl } = req.body;
 
     // Check if the email is already used
     const existingUser = await User.findOne({ email });
@@ -86,7 +86,7 @@ router.post('/signup', async (req, res) => {
     }
 
     // Create new user
-    const user = new User({ username, email, password, age, name, sex, dob, country, address, phone, username2 });
+    const user = new User({ username, email, password, age, name, sex, dob, country, address, phone, username2, profileImageUrl });
     await user.save();
 
     // Generate JWT token
