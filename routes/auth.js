@@ -105,7 +105,8 @@ router.post('/signup', async (req, res) => {
         country: user.country,
         address: user.address,
         phone: user.phone,
-        username2: user.username2
+        username2: user.username2,
+        profileImageUrl: user.profileImageUrl
       }
     });
   } catch (error) {
@@ -194,7 +195,8 @@ router.post('/login', async (req, res) => {
           country: user.country,
           address: user.address,
           phone: user.phone,
-          username2: user.username2
+          username2: user.username2,
+          profileImageUrl: user.profileImageUrl
         }
       });
     } catch (error) {
