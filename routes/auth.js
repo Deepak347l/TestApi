@@ -5,8 +5,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
-// Store OTPs in memory (use a database like Redis for production)
-const otpStore = {};
 
 // Nodemailer configuration
 const transporter = nodemailer.createTransport({
@@ -18,63 +16,74 @@ const transporter = nodemailer.createTransport({
 });
 
 // Forgot Password API - Send OTP
+// ✅ Route to send OTP
 router.post('/forgot-password', async (req, res) => {
-  try {
-    const { email } = req.body;
+  const { email } = req.body;
 
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000);
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000);
+  const otpExpires = new Date(Date.now() + 5 * 60 * 1000); // ✅ OTP valid for 5 minutes
 
-    // Store OTP temporarily (should use Redis in production)
-    otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 }; // 5 minutes expiry
+  // Save OTP & Expiry in DB
+  user.otp = otp;
+  user.otpExpires = otpExpires;
+  await user.save();
 
-    // Send OTP via email
-    const mailOptions = {
-      from: 'your-email@gmail.com',
-      to: email,
-      subject: 'Password Reset OTP',
-      text: `Your OTP for password reset is: ${otp}. It will expire in 5 minutes.`
-    };
+  // Send OTP via Email
+  const mailOptions = {
+    from: 'your-email@gmail.com',
+    to: email,
+    subject: 'Password Reset OTP',
+    text: `Your OTP is: ${otp}. It expires in 5 minutes.`
+  };
 
-    await transporter.sendMail(mailOptions);
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) return res.status(500).json({ message: 'Error sending OTP' });
 
     res.status(200).json({ message: 'OTP sent to email' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  });
 });
+//verify otp
+router.post('/verify-otp', async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  // ✅ Check if OTP matches and not expired
+  if (user.otp !== parseInt(otp)) {
+    return res.status(400).json({ message: 'Invalid OTP' });
+  }
 
-// Reset Password API - Verify OTP and Change Password
+  if (new Date() > user.otpExpires) {
+    return res.status(400).json({ message: 'OTP expired' });
+  }
+
+  res.status(200).json({ message: 'OTP verified successfully' });
+});
+//reset
 router.post('/reset-password', async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
+  const { email, otp, newPassword } = req.body;
 
-    // Check if OTP is valid
-    if (!otpStore[email] || otpStore[email].otp !== parseInt(otp) || otpStore[email].expires < Date.now()) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
-    }
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update user password
-    await User.findOneAndUpdate({ email }, { password: hashedPassword });
-
-    // Remove OTP from store
-    delete otpStore[email];
-
-    res.status(200).json({ message: 'Password reset successful' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (user.otp !== parseInt(otp)) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
   }
+  // ✅ Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.password = hashedPassword;
+
+  // ✅ Clear OTP fields after reset
+  user.otp = null;
+  user.otpExpires = null;
+  await user.save();
+
+  res.status(200).json({ message: 'Password reset successfully' });
 });
-
-
+//signup
 router.post('/signup', async (req, res) => {
   try {
     const { username, email, password, age, name, sex, dob, country, address, phone, username2, profileImageUrl } = req.body;

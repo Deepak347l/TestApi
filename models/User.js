@@ -13,7 +13,9 @@ const userSchema = new mongoose.Schema({
   address: { type: String },
   phone: { type: String },
   username2: { type: String, unique: true, sparse: true },
-  profileImageUrl: { type: String, required: true }
+  profileImageUrl: { type: String, required: true, default: "https://example.com/default-profile.png"},
+  otp: Number,  // ✅ Store OTP
+  otpExpires: Date // ✅ Store OTP expiry time
 });
 
 // Hash password before saving
