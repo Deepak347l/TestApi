@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require("mongoose");
 const router = express.Router();
 const Video = require('../models/Video'); // Import Video model
 
@@ -82,21 +83,59 @@ router.post("/like-video", async (req, res) => {
   }
 });
 /** ✅ Add a comment */
-router.put('/comment/:videoId', async (req, res) => {
-    try {
-      const { username, comment } = req.body;
-      const video = await Video.findOne({ videoId: req.params.videoId });
-  
-      if (!video) return res.status(404).json({ message: 'Video not found' });
-  
-      video.comments.push({ username, comment });
-      await video.save();
-  
-      res.status(200).json({ message: 'Comment added!', comments: video.comments });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+router.post("/comment-video", async (req, res) => {
+  try {
+    const { videoId, username, comment, action, commentId } = req.body;
+
+    // Validate videoId format
+    if (!mongoose.Types.ObjectId.isValid(videoId)) {
+      return res.status(400).json({ message: "Invalid videoId format" });
     }
-  });
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    if (action === "add") {
+      // Add new comment
+      const newComment = {
+        _id: new mongoose.Types.ObjectId(),
+        username,
+        comment,
+        createdAt: new Date(),
+        likes: [],
+      };
+      video.comments.push(newComment);
+    } else if (action === "delete") {
+      // Remove comment
+      video.comments = video.comments.filter((c) => c._id.toString() !== commentId);
+    } else if (action === "like") {
+      // Find the comment
+      const targetComment = video.comments.find((c) => c._id.toString() === commentId);
+      if (!targetComment) {
+        return res.status(404).json({ message: "Comment not found" });
+      }
+
+      // Toggle Like
+      if (!targetComment.likes.includes(username)) {
+        targetComment.likes.push(username);
+      } else {
+        targetComment.likes = targetComment.likes.filter((user) => user !== username);
+      }
+    } else {
+      return res.status(400).json({ message: "Invalid action. Use 'add', 'delete', or 'like'." });
+    }
+
+    await video.save();
+
+    return res.json({ message: "Success", comments: video.comments });
+
+  } catch (error) {
+    console.error("Error in comment-video API:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
    /** ✅ Save a video */
 router.put('/save/:videoId', async (req, res) => {
     try {

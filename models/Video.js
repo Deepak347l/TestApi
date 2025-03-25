@@ -8,8 +8,11 @@ const videoSchema = new mongoose.Schema({
   likes: { type: Array, default: [] },
   comments: [
     {
+       _id: mongoose.Schema.Types.ObjectId,
       username: String,
-      comment: String
+      comment: String,
+      createdAt: { type: Date, default: Date.now },
+      likes: { type: Array, default: [] }, // Array of user IDs who liked the comment
     }
   ],
   saveByUser: { type: Array, default: [] }, // List of users who saved the video
