@@ -5,7 +5,7 @@ const videoSchema = new mongoose.Schema({
   videoId: { type: String, required: true, unique: true },
   postUserEmail: { type: String, required: true },
   description: { type: String },
-  likes: { type: Number, default: 0 },
+  likes: { type: Array, default: [] },
   comments: [
     {
       username: String,

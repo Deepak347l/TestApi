@@ -19,7 +19,7 @@ router.post('/create', async (req, res) => {
       videoId,
       postUserEmail,
       description,
-      likes: likes || 0,
+      likes: likes || [],
       comments: comments || [],
       saveByUser: saveByUser || [],
       sharedByUser: sharedByUser || []
@@ -55,19 +55,32 @@ router.get('/all', async (req, res) => {
   });
 
   /** ✅ Like a video */
-router.put('/like/:videoId', async (req, res) => {
-    try {
-      const video = await Video.findOne({ videoId: req.params.videoId });
-      if (!video) return res.status(404).json({ message: 'Video not found' });
-  
-      video.likes += 1; // Increment likes
-      await video.save();
-      
-      res.status(200).json({ message: 'Video liked!', likes: video.likes });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+router.post("/like-video", async (req, res) => {
+  try {
+    const { videoId, userEmail } = req.body;
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
     }
-  });
+
+    const isLiked = video.likes.includes(userEmail);
+
+    if (isLiked) {
+      // Unlike the video (remove user)
+      video.likes = video.likes.filter((email) => email !== userEmail);
+      await video.save();
+      return res.json({ message: "Video unliked", likes: video.likes });
+    } else {
+      // Like the video (add user)
+      video.likes.push(userEmail);
+      await video.save();
+      return res.json({ message: "Video liked", likes: video.likes });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
 /** ✅ Add a comment */
 router.put('/comment/:videoId', async (req, res) => {
     try {
