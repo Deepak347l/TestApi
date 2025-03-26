@@ -103,7 +103,7 @@ router.post("/comment-video", async (req, res) => {
         _id: new mongoose.Types.ObjectId(),
         username,
         comment,
-        createdAt: new Date(),
+        createdAt: Date.now(),
         likes: [],
       };
       video.comments.push(newComment);
