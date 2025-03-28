@@ -29,7 +29,11 @@ router.post('/create', async (req, res) => {
 
     // Save to DB
     await newVideo.save();
-    broadcastVideoUpdate(newVideo); // Notify WebSocket clients
+    // ✅ Broadcast update using WebSocket
+    const io = req.app.get('io'); // Get WebSocket instance
+    if (io) {
+      io.emit('videoUpdated', newVideo);
+    } // Notify WebSocket clients
     res.status(201).json({ message: "Video created successfully!", video: newVideo });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -78,7 +82,11 @@ router.post("/like-video", async (req, res) => {
       // Like the video (add user)
       video.likes.push(userEmail);
       await video.save();
-      broadcastVideoUpdate(video); // Notify WebSocket clients
+     // ✅ Broadcast update using WebSocket
+    const io = req.app.get('io'); // Get WebSocket instance
+    if (io) {
+      io.emit('videoUpdated', video);
+    } // Notify WebSocket clients
       return res.json({ message: "Video liked", likes: video.likes });
     }
   } catch (error) {
@@ -131,7 +139,11 @@ router.post("/comment-video", async (req, res) => {
     }
 
     await video.save();
-    broadcastVideoUpdate(video); // Notify WebSocket clients
+    // ✅ Broadcast update using WebSocket
+    const io = req.app.get('io'); // Get WebSocket instance
+    if (io) {
+      io.emit('videoUpdated', video);
+    } // Notify WebSocket clients
     return res.json({ message: "Success", comments: video.comments });
 
   } catch (error) {
@@ -150,7 +162,11 @@ router.put('/save/:videoId', async (req, res) => {
       if (!video.saveByUser.includes(userEmail)) {
         video.saveByUser.push(userEmail);
         await video.save();
-        broadcastVideoUpdate(video); // Notify WebSocket clients
+        // ✅ Broadcast update using WebSocket
+    const io = req.app.get('io'); // Get WebSocket instance
+    if (io) {
+      io.emit('videoUpdated', video);
+    } // Notify WebSocket clients
       }
   
       res.status(200).json({ message: 'Video saved!', savedBy: video.saveByUser });
@@ -169,7 +185,11 @@ router.put('/share/:videoId', async (req, res) => {
       if (!video.sharedByUser.includes(userEmail)) {
         video.sharedByUser.push(userEmail);
         await video.save();
-        broadcastVideoUpdate(video); // Notify WebSocket clients
+         // ✅ Broadcast update using WebSocket
+    const io = req.app.get('io'); // Get WebSocket instance
+    if (io) {
+      io.emit('videoUpdated', video);
+    } // Notify WebSocket clients// Notify WebSocket clients
       }
   
       res.status(200).json({ message: 'Video shared!', sharedBy: video.sharedByUser });

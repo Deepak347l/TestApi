@@ -48,9 +48,11 @@ app.use('/api/reels', reelRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/video', videoRoutes);
 
+
+app.set('io', io);
+app.set('broadcastVideoUpdate', broadcastVideoUpdate);
+
 // ✅ Start the Server
 server.listen(port, () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
 });
-
-module.exports = { io, broadcastVideoUpdate }; // Export `io` for use in other files
